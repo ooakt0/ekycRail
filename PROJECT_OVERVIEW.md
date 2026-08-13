@@ -93,3 +93,25 @@ terraform/      KMS/IAM infrastructure
 ## Current scope
 
 The repository currently implements the synchronous Nagarik verification orchestration, audit logging, KMS JWT signing, local PostgreSQL development setup, OpenAPI documentation, and Terraform for the signing key/runtime role. It is a focused middleware service rather than a complete banking application or an identity-data store.
+
+## Product direction: consent-based identity verification
+
+The intended product direction is similar to the United States Social Security Administration's electronic Consent Based Social Security Number Verification (eCBSV) service: a government-authorised, consent-based verification API for permitted financial institutions. The service should verify whether customer-supplied identifiers, such as Nagarik number, name, and date of birth, match authoritative records. It should not become a general-purpose source of government identity records.
+
+The key principle is **match, do not disclose**. A bank or finance company supplies a purpose-bound request and proof of customer consent. eKYC Rail then performs the approved government verification and returns a minimal signed assertion, such as match status by requested attribute, an opaque verification ID, timestamps, an approved government reference, and token expiry. It should return raw government-held attributes only where a government agreement, permitted purpose, and explicit customer consent all allow it.
+
+```text
+Permitted financial institution
+  -> authenticated, consent-bound verification request
+eKYC Rail
+  -> authorised Nagarik App / government verification request
+Government authority
+  -> match decision
+eKYC Rail
+  -> minimal signed verification assertion
+Permitted financial institution
+```
+
+Each consent should identify the financial institution, verification purpose, requested checks, customer acceptance, consent receipt ID, and creation/expiry timestamps. The platform should enforce tenant-specific access, permitted purposes, idempotency, auditability, and revocation.
+
+Before live deployment, the project requires a formal government data-sharing agreement, technical approval, and legal/compliance review. Relevant references include the [SSA eCBSV overview](https://www.ssa.gov/dataexchange/eCBSV/), the [SSA technical guide](https://www.ssa.gov/dataexchange/eCBSV/documents/Technical%20Information%20Document%20for%20eCBSV.pdf), and Nepal's [Ministry of Home Affairs procedure for read-only citizenship-data access](https://moha.gov.np/post/na-gara-kata-pa-rama-naepata-raka-da-ta-ha-ra-na-ma-ta-ra-paha-ca-tha-na-sama). These references inform the model but do not by themselves grant permission to operate it in Nepal.
