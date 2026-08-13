@@ -1,0 +1,347 @@
+{
+  "type": "record",
+  "name": "IdentityVerificationEnvelope",
+  "namespace": "com.ekycrail.avro.identity",
+  "doc": "Zero-PII contract for identity verification transaction metadata, verification parameters, and cryptographic token response artifacts.",
+  "fields": [
+    {
+      "name": "schemaVersion",
+      "type": "string",
+      "doc": "Schema semantic version for compatibility tracking.",
+      "default": "1.0.0"
+    },
+    {
+      "name": "requestContext",
+      "type": {
+        "type": "record",
+        "name": "RequestContext",
+        "fields": [
+          {
+            "name": "transactionId",
+            "type": "string",
+            "doc": "Client-generated transaction identifier used for idempotency and tracing."
+          },
+          {
+            "name": "bankId",
+            "type": "string",
+            "doc": "Bank identifier; no customer identity data permitted."
+          },
+          {
+            "name": "channel",
+            "type": {
+              "type": "enum",
+              "name": "Channel",
+              "symbols": [
+                "MOBILE",
+                "WEB",
+                "BRANCH",
+                "API_GATEWAY"
+              ]
+            }
+          },
+          {
+            "name": "requestTimestamp",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            },
+            "doc": "UTC timestamp when request was accepted by the orchestrator."
+          },
+          {
+            "name": "timeoutMs",
+            "type": "int",
+            "doc": "Upstream SLA timeout in milliseconds.",
+            "default": 5000
+          },
+          {
+            "name": "idempotencyKey",
+            "type": [
+              "null",
+              "string"
+            ],
+            "doc": "Optional idempotency key for safe retries.",
+            "default": null
+          },
+          {
+            "name": "requestNonce",
+            "type": "string",
+            "doc": "Cryptographically random nonce to bind request/response pairs."
+          }
+        ]
+      }
+    },
+    {
+      "name": "verificationRequest",
+      "type": {
+        "type": "record",
+        "name": "VerificationRequest",
+        "fields": [
+          {
+            "name": "requestedScopes",
+            "type": {
+              "type": "array",
+              "items": {
+                "type": "enum",
+                "name": "VerificationScope",
+                "symbols": [
+                  "IDENTITY_STATUS",
+                  "KYC_ELIGIBILITY",
+                  "LIVENESS_RESULT",
+                  "DOCUMENT_INTEGRITY",
+                  "FRAUD_RISK_SIGNAL"
+                ]
+              }
+            },
+            "doc": "Requested verification outcomes only; no raw identity attributes included."
+          },
+          {
+            "name": "purposeCode",
+            "type": {
+              "type": "enum",
+              "name": "PurposeCode",
+              "symbols": [
+                "ACCOUNT_OPENING",
+                "LOAN_ORIGINATION",
+                "PAYMENT_LIMIT_INCREASE",
+                "REGULATORY_REFRESH"
+              ]
+            }
+          },
+          {
+            "name": "consentReference",
+            "type": "string",
+            "doc": "External consent artifact reference identifier, never raw consent payload."
+          },
+          {
+            "name": "callbackMode",
+            "type": {
+              "type": "enum",
+              "name": "CallbackMode",
+              "symbols": [
+                "SYNC",
+                "ASYNC"
+              ]
+            },
+            "default": "SYNC"
+          },
+          {
+            "name": "responseEncryption",
+            "type": {
+              "type": "record",
+              "name": "ResponseEncryption",
+              "fields": [
+                {
+                  "name": "kmsKeyAlias",
+                  "type": "string",
+                  "doc": "Alias or ARN reference used by KMS for envelope encryption."
+                },
+                {
+                  "name": "keySpec",
+                  "type": {
+                    "type": "enum",
+                    "name": "KeySpec",
+                    "symbols": [
+                      "RSA_2048",
+                      "RSA_3072",
+                      "ECC_NIST_P256"
+                    ]
+                  }
+                },
+                {
+                  "name": "contentEncryptionAlgorithm",
+                  "type": {
+                    "type": "enum",
+                    "name": "ContentEncryptionAlgorithm",
+                    "symbols": [
+                      "A256GCM",
+                      "A128GCM"
+                    ]
+                  },
+                  "default": "A256GCM"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "verificationResponse",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "VerificationResponse",
+          "fields": [
+            {
+              "name": "status",
+              "type": {
+                "type": "enum",
+                "name": "VerificationStatus",
+                "symbols": [
+                  "ACCEPTED",
+                  "PROCESSING",
+                  "SUCCEEDED",
+                  "FAILED",
+                  "REJECTED"
+                ]
+              }
+            },
+            {
+              "name": "decision",
+              "type": {
+                "type": "enum",
+                "name": "VerificationDecision",
+                "symbols": [
+                  "APPROVED",
+                  "DENIED",
+                  "REVIEW_REQUIRED",
+                  "UNKNOWN"
+                ]
+              },
+              "default": "UNKNOWN"
+            },
+            {
+              "name": "resultCode",
+              "type": "string",
+              "doc": "Machine-readable status/result code."
+            },
+            {
+              "name": "resultMessage",
+              "type": [
+                "null",
+                "string"
+              ],
+              "doc": "Sanitized message suitable for operational troubleshooting.",
+              "default": null
+            },
+            {
+              "name": "tokenResponse",
+              "type": [
+                "null",
+                {
+                  "type": "record",
+                  "name": "TokenResponse",
+                  "fields": [
+                    {
+                      "name": "tokenType",
+                      "type": {
+                        "type": "enum",
+                        "name": "TokenType",
+                        "symbols": [
+                          "BEARER"
+                        ]
+                      },
+                      "default": "BEARER"
+                    },
+                    {
+                      "name": "signedJwt",
+                      "type": "string",
+                      "doc": "Signed JWT containing non-PII verification claims."
+                    },
+                    {
+                      "name": "jwsAlgorithm",
+                      "type": {
+                        "type": "enum",
+                        "name": "JwsAlgorithm",
+                        "symbols": [
+                          "RS256",
+                          "ES256"
+                        ]
+                      }
+                    },
+                    {
+                      "name": "keyId",
+                      "type": "string",
+                      "doc": "KMS signing key identifier (ARN or key alias)."
+                    },
+                    {
+                      "name": "issuedAt",
+                      "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-millis"
+                      }
+                    },
+                    {
+                      "name": "expiresAt",
+                      "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-millis"
+                      }
+                    },
+                    {
+                      "name": "tokenDigestSha256",
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "doc": "Optional token digest for replay detection and audit matching.",
+                      "default": null
+                    },
+                    {
+                      "name": "encryptedEvidence",
+                      "type": [
+                        "null",
+                        "string"
+                      ],
+                      "doc": "Optional compact encrypted evidence package; never plaintext identity data.",
+                      "default": null
+                    }
+                  ]
+                }
+              ],
+              "default": null
+            },
+            {
+              "name": "respondedAt",
+              "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              }
+            }
+          ]
+        }
+      ],
+      "default": null
+    },
+    {
+      "name": "auditMetadata",
+      "type": {
+        "type": "record",
+        "name": "AuditMetadata",
+        "fields": [
+          {
+            "name": "traceId",
+            "type": [
+              "null",
+              "string"
+            ],
+            "default": null
+          },
+          {
+            "name": "latencyMs",
+            "type": [
+              "null",
+              "int"
+            ],
+            "default": null
+          },
+          {
+            "name": "status",
+            "type": {
+              "type": "enum",
+              "name": "PipelineStatus",
+              "symbols": [
+                "OK",
+                "DEGRADED",
+                "ERROR"
+              ]
+            },
+            "default": "OK"
+          }
+        ]
+      }
+    }
+  ]
+}
+

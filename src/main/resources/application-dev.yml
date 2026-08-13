@@ -1,0 +1,39 @@
+# Dev environment profile - connects to shared Supabase PostgreSQL instance.
+# All Supabase connection details must be supplied via environment variables (never hardcoded/committed).
+# Required env vars: SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD
+
+aws:
+  region: ${AWS_REGION:ap-south-1}
+  kms:
+    key-arn: ${AWS_KMS_KEY_ARN}
+    enabled: ${AWS_KMS_ENABLED:true}
+
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://${SUPABASE_DB_HOST}:${SUPABASE_DB_PORT:5432}/${SUPABASE_DB_NAME:postgres}?sslMode=require
+    username: ${SUPABASE_DB_USER}
+    password: ${SUPABASE_DB_PASSWORD}
+    pool:
+      initial-size: 2
+      max-size: 10
+      max-idle-time: 30m
+
+nagarik:
+  base-url: ${NAGARIK_BASE_URL:https://api.nagarikapp.gov.np}
+  verify-path: ${NAGARIK_VERIFY_PATH:/v1/identity/verify}
+  connect-timeout-ms: ${NAGARIK_CONNECT_TIMEOUT_MS:1500}
+  response-timeout-ms: ${NAGARIK_RESPONSE_TIMEOUT_MS:2500}
+
+security:
+  jwt:
+    issuer: ${JWT_ISSUER:ekyc-rail}
+    ttl-seconds: ${JWT_TTL_SECONDS:300}
+    audience: ${JWT_AUDIENCE:ekyc-rail-client}
+
+logging:
+  level:
+    root: WARN
+    com.ekycrail: INFO
+    org.springframework.web: INFO
+    org.springframework.boot: INFO
+

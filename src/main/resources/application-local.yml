@@ -1,0 +1,45 @@
+# Local development profile - connects to a locally running PostgreSQL instance.
+# Start local Postgres via: docker compose -f docker-compose.local.yml up -d
+# (Uses host port 5433 to avoid clashing with other local Postgres containers on 5432)
+
+aws:
+  region: ${AWS_REGION:ap-south-1}
+  kms:
+    key-arn: ${AWS_KMS_KEY_ARN:arn:aws:kms:ap-south-1:821814521304:key/3e7038b3-c1d6-429f-9730-8e20d205b6f7}
+    enabled: ${AWS_KMS_ENABLED:true}
+
+spring:
+  r2dbc:
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5433/ekycrail}
+    username: ${SPRING_R2DBC_USERNAME:postgres}
+    password: ${SPRING_R2DBC_PASSWORD:postgres}
+    pool:
+      initial-size: 2
+      max-size: 10
+      max-idle-time: 30m
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/schema.sql
+
+nagarik:
+  base-url: ${NAGARIK_BASE_URL:https://api.nagarikapp.gov.np}
+  verify-path: ${NAGARIK_VERIFY_PATH:/v1/identity/verify}
+  connect-timeout-ms: ${NAGARIK_CONNECT_TIMEOUT_MS:1500}
+  response-timeout-ms: ${NAGARIK_RESPONSE_TIMEOUT_MS:2500}
+
+security:
+  jwt:
+    issuer: ${JWT_ISSUER:ekyc-rail}
+    ttl-seconds: ${JWT_TTL_SECONDS:300}
+    audience: ${JWT_AUDIENCE:ekyc-rail-client}
+
+logging:
+  level:
+    root: INFO
+    com.ekycrail: DEBUG
+    org.springframework.web: INFO
+    org.springframework.boot.autoconfigure: WARN
+    io.r2dbc.postgresql.QUERY: DEBUG
+
+

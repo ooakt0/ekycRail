@@ -1,0 +1,37 @@
+aws_region = "ap-south-1"
+environment = "dev"
+project_name = "ekyc-rail"
+project_version = "0.0.1-SNAPSHOT"
+component_version = "v1"
+provisioned_date = "2026-08-09"
+owner = "platform"
+repository_name = "ekycRail"
+
+# Must start with alias/
+kms_alias_name = "alias/ekyc-rail-signing"
+
+# Create ECS/Fargate runtime role for this application.
+create_runtime_iam_role = true
+runtime_iam_role_name   = "ekyc-rail-task-role"
+
+# IAM role/user ARNs that can administer this key.
+kms_admin_principal_arns = [
+  "arn:aws:iam::123456789012:role/platform-admin"
+]
+
+# Additional existing runtime IAM roles allowed to sign/verify JWTs.
+# Leave empty when you only use the role provisioned by this stack.
+kms_usage_principal_arns = [
+  # "arn:aws:iam::123456789012:role/existing-runtime-role"
+]
+
+# Optional extra managed policies for runtime role attachment.
+runtime_role_additional_policy_arns = [
+  # "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+]
+
+tags = {
+  Team = "platform"
+  CostCenter = "fintech-identity"
+}
+
