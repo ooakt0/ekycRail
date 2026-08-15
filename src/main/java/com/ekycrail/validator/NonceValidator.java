@@ -1,4 +1,7 @@
 package com.ekycrail.validator;
 
-public final class NonceValidator {
+import reactor.core.publisher.Mono;
+
+public interface NonceValidator {
+    Mono<Void> requireUnused(String tenantId, String nonce);
 }

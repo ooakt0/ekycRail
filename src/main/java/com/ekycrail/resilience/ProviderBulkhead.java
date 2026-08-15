@@ -1,4 +1,8 @@
 package com.ekycrail.resilience;
 
-public final class ProviderBulkhead {
+import java.util.function.Supplier;
+import reactor.core.publisher.Mono;
+
+public interface ProviderBulkhead {
+    <T> Mono<T> execute(Supplier<Mono<T>> operation);
 }

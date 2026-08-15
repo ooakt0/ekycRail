@@ -1,4 +1,7 @@
 package com.ekycrail.dto;
 
-public final class ConsentRevokeRequest {
+public record ConsentRevokeRequest(
+        String reason,
+        String actor
+) {
 }

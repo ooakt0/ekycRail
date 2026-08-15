@@ -9,6 +9,7 @@ import com.nimbusds.jose.crypto.impl.BaseJWSProvider;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -26,7 +27,7 @@ import software.amazon.awssdk.services.kms.model.SignResponse;
 import software.amazon.awssdk.services.kms.model.SigningAlgorithmSpec;
 
 @Component
-public class KmsJwtSigner {
+public final class KmsJwtSigner implements JwtSigner {
 
     private final KmsClient kmsClient;
     private final String kmsKeyArn;
@@ -48,6 +49,46 @@ public class KmsJwtSigner {
     public Mono<String> signVerificationToken(VerificationTokenRequest request) {
         return Mono.fromCallable(() -> signInternal(request))
                 .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @Override
+    public Mono<String> sign(VerificationAssertionClaims claims) {
+        if (claims == null) {
+            return Mono.error(new IllegalArgumentException("verification assertion claims must not be null"));
+        }
+        return signVerificationToken(new VerificationTokenRequest(
+                claims.transactionId(),
+                List.of(claims.audience()),
+                claims.transactionId(),
+                "unknown",
+                "NAGARIK",
+                claims.resultCode().name(),
+                null,
+                null,
+                claims.issuedAt()
+        ));
+    }
+
+    private Mono<ByteBuffer> kmsSign(byte[] signingInput) {
+        return Mono.fromCallable(() -> kmsClient.sign(SignRequest.builder()
+                        .keyId(kmsKeyArn)
+                        .signingAlgorithm(SigningAlgorithmSpec.RSASSA_PKCS1_V1_5_SHA_256)
+                        .messageType(MessageType.RAW)
+                        .message(SdkBytes.fromByteArray(signingInput))
+                        .build())
+                .signature()
+                .asByteBuffer());
+    }
+
+    private JWSHeader buildHeader(String keyId) {
+        return new JWSHeader.Builder(JWSAlgorithm.RS256)
+                .type(JOSEObjectType.JWT)
+                .keyID(keyId)
+                .build();
+    }
+
+    private String buildCompactJws(JWSHeader header, String encodedPayload, byte[] signature) {
+        return header.toBase64URL() + "." + encodedPayload + "." + Base64URL.encode(signature);
     }
 
     private String signInternal(VerificationTokenRequest request) throws Exception {

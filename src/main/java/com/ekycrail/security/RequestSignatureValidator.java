@@ -1,4 +1,5 @@
 package com.ekycrail.security;
 
-public final class RequestSignatureValidator {
+public interface RequestSignatureValidator {
+    boolean isValid(String apiKey, String signature, byte[] canonicalRequest);
 }

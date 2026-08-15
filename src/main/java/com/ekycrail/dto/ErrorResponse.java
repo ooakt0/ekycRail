@@ -1,4 +1,8 @@
 package com.ekycrail.dto;
 
-public final class ErrorResponse {
+public record ErrorResponse(
+        String errorCode,
+        String message,
+        String correlationId
+) {
 }
